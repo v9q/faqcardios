@@ -103,13 +103,6 @@
 
   .article-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
   .article-item{padding:14px 16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  /* em telas estreitas, o texto "N casos em 3 meses" (que não quebra linha)
-     espremia o título contra a borda, quebrando palavra por palavra — abaixo
-     de 560px o item empilha em duas linhas (título em cima, volume embaixo) */
-  @media (max-width: 560px){
-    .article-item{flex-direction:column;align-items:flex-start;gap:4px}
-    .article-item .volume{white-space:normal}
-  }
   .article-item:hover{border-color:var(--brand)}
   .article-item .titulo{font-size:14.5px;font-weight:600;color:var(--brand-dark)}
   .article-item .star{color:var(--accent);margin-right:6px;display:inline-flex;vertical-align:-2px}
@@ -117,6 +110,16 @@
   .article-item .volume{font-size:12px;color:var(--ink-soft);white-space:nowrap}
   .flag{display:inline-flex;align-items:center;gap:4px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--warn-border);font-size:11px;padding:2px 7px;border-radius:6px;margin-left:8px;vertical-align:middle}
   .flag svg{width:11px;height:11px}
+  /* em telas estreitas, o texto "N casos em 3 meses" (que não quebra linha)
+     espremia o título contra a borda / vazava pra fora do card — abaixo de
+     560px o item empilha em duas linhas (título em cima, volume embaixo).
+     Vem DEPOIS das regras .article-item/.volume acima de propósito: mesma
+     especificidade CSS, então a ordem no arquivo decide quem vence — teria
+     sido silenciosamente sobrescrita se ficasse antes. */
+  @media (max-width: 560px){
+    .article-item{flex-direction:column;align-items:flex-start;gap:4px}
+    .article-item .volume{white-space:normal}
+  }
   .article-body h2{font-size:16px;margin:22px 0 8px}
   .article-body h2:first-child{margin-top:0}
   .article-body p{line-height:1.6;font-size:14.5px}
