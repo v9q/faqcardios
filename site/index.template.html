@@ -103,6 +103,13 @@
 
   .article-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
   .article-item{padding:14px 16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  /* em telas estreitas, o texto "N casos em 3 meses" (que não quebra linha)
+     espremia o título contra a borda, quebrando palavra por palavra — abaixo
+     de 560px o item empilha em duas linhas (título em cima, volume embaixo) */
+  @media (max-width: 560px){
+    .article-item{flex-direction:column;align-items:flex-start;gap:4px}
+    .article-item .volume{white-space:normal}
+  }
   .article-item:hover{border-color:var(--brand)}
   .article-item .titulo{font-size:14.5px;font-weight:600;color:var(--brand-dark)}
   .article-item .star{color:var(--accent);margin-right:6px;display:inline-flex;vertical-align:-2px}
@@ -120,7 +127,13 @@
   .video-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--brand-dark);text-decoration:none;font-weight:600;margin-bottom:18px}
   .video-link svg{width:14px;height:14px}
   .empty-hint{font-size:13.5px;color:var(--ink-soft);line-height:1.6}
-  .wa-cta{position:fixed;right:20px;bottom:20px;background:#25D366;color:#fff;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;text-decoration:none}
+  /* prompt de WhatsApp no final de cada artigo (deixou de ser um botão
+     flutuante fixo na tela) */
+  .wa-inline{margin-top:28px;padding:16px 20px;background:#EAFBF1;border:1px solid #BEEFD2;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center}
+  .wa-inline .wa-text{font-size:14px;color:var(--ink);margin:0}
+  .wa-inline a{display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;font-weight:600;font-size:13.5px;padding:8px 14px;border-radius:999px;text-decoration:none;white-space:nowrap}
+  .wa-inline a:hover{background:#20bd5a}
+  .wa-inline svg{width:15px;height:15px}
   .no-results{padding:32px;text-align:center;color:var(--ink-soft)}
   footer.note{max-width:1040px;margin:28px auto 0;padding:0 16px 20px;font-size:12px;color:var(--ink-soft);text-align:center}
 </style>
@@ -159,11 +172,6 @@
 
 <footer class="note">Protótipo de demonstração — conteúdo baseado na análise de atendimentos do Suri (jun–set/2026), manuais, folhetos e vídeos oficiais Cardios. Ver <code>docs/analise-dados-suporte.md</code> para o detalhe completo.</footer>
 
-<a class="wa-cta" href="https://wa.me/551138833000" target="_blank" rel="noopener">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.42-4.4-1.16l-.32-.19-3.01.79.8-2.93-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>
-  Falar no WhatsApp
-</a>
-
 <script id="faq-data" type="application/json">__DATA__</script>
 <script>
 const DATA = JSON.parse(document.getElementById('faq-data').textContent);
@@ -173,6 +181,17 @@ const ICON_ARROW = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_ALERT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 1 21h22L12 2z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 const ICON_STAR = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.9 6.9 7.1.6-5.4 4.6 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.5l7.1-.6L12 2z"/></svg>`;
 const ICON_PLAY = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8V4z"/></svg>`;
+const ICON_WHATSAPP = `<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.42-4.4-1.16l-.32-.19-3.01.79.8-2.93-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>`;
+
+// Prompt de WhatsApp ao final de cada artigo — deixou de ser um botão
+// flutuante fixo na tela para aparecer só quando o cliente já leu a
+// resposta e ainda pode precisar de ajuda humana.
+function waInlineHtml(){
+  return `<div class="wa-inline">
+    <p class="wa-text">Ainda tem dúvida?</p>
+    <a href="https://wa.me/551138833000" target="_blank" rel="noopener">${ICON_WHATSAPP} Converse com nosso Suporte via WhatsApp</a>
+  </div>`;
+}
 
 function mdToHtml(md) {
   const lines = md.split('\n');
@@ -364,6 +383,7 @@ function renderArticle(catEncoded, idx) {
     <div class="meta-row">${pills.map(p => `<span class="meta-pill">${p}</span>`).join('')}</div>
     ${a.video ? `<a class="video-link" href="${a.video}" target="_blank" rel="noopener">${ICON_PLAY} Ver vídeo de treinamento relacionado</a>` : ''}
     <div class="article-body">${mdToHtml(a.body)}</div>
+    ${waInlineHtml()}
   </section>`;
   bindMiniSearch();
 }
