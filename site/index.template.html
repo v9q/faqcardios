@@ -419,7 +419,19 @@ function renderSearchResults(query) {
 
 document.getElementById('search-home').addEventListener('input', (e) => runSearch(e.target.value));
 
-renderHome();
+// Deep-link de entrada: permite abrir um artigo específico direto por URL
+// (?cat=Holter&i=0), usado pelo bot de teste (bot.html) no link "ver artigo
+// completo". Sem esses parâmetros, comportamento normal (home).
+(function initFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const cat = params.get('cat');
+  const i = parseInt(params.get('i'), 10);
+  if (cat && !Number.isNaN(i) && DATA.find(c => c.categoria === cat)) {
+    renderArticle(encodeURIComponent(cat), i);
+  } else {
+    renderHome();
+  }
+})();
 </script>
 </body>
 </html>

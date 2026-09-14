@@ -1,14 +1,14 @@
 ---
 categoria: ECG
 volume_suri: "92 casos em 3 meses"
-fontes_disponiveis: ["Manual do Usuário Cardioseven VER003-DEZ2024", "Manual do Usuário Dynamis VER00-FEV2025"]
-status: "esqueleto — sem artigos ainda, próxima rodada"
+fontes_disponiveis: ["Manual do Usuário Dynamis VER003-FEV2025"]
+status: "1 artigo publicado (instalação e preparação) — mais tópicos na próxima rodada"
 ---
 
-# ECG (Cardioseven, Dynamis) — pendente de conteúdo
+# ECG (Dynamis) — próximos tópicos
 
-Categoria de eletrocardiógrafos Cardioseven e Dynamis. Volume menor, mas com manuais atuais já disponíveis.
+Categoria do eletrocardiógrafo de repouso Dynamis. **O CardioSeven não é um ECG** — apesar do nome, é um gravador ambulatorial (Holter) de até 7 dias, como o CardioLight/CardioLoop, e por isso é tratado na categoria Holter, não aqui.
 
-Tópicos prováveis para a próxima rodada:
-- Instalação/colocação de eletrodos.
-- Dúvidas de utilização gerais do equipamento.
+Tópicos prováveis para as próximas rodadas:
+- Interpretação de mensagens de erro específicas do software Dynamis.
+- Dúvidas de qualidade de traçado / ruído no exame.

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suporte Cardios — bot de teste</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<style>
+  /* Este protótipo imita a interface do WhatsApp de propósito (verde/bege,
+     balões, cabeçalho escuro) — a ideia é testar o CONTEÚDO das respostas
+     (extraídas da seção "Resposta rápida" de cada artigo) num ambiente que
+     se pareça o máximo possível com o canal real, mesmo sem estar de fato
+     conectado ao WhatsApp/Suri. */
+  :root{
+    --wa-header:#075E54; --wa-header-dark:#054d44; --wa-bg:#ECE5DD;
+    --wa-bubble-bot:#ffffff; --wa-bubble-user:#DCF8C6; --ink:#262626; --ink-soft:#5a6a63;
+    --brand:#ED1C24; --brand-dark:#C61017;
+    --wa-green:#25D366; --wa-green-dark:#20bd5a;
+    --shadow:0 1px 1px rgba(0,0,0,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--wa-bg);color:var(--ink);font-family:"Satoshi","Satoshi Variable",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+  a{color:inherit}
+
+  .chat-header{background:var(--wa-header);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 14px;flex:0 0 auto;box-shadow:var(--shadow)}
+  .chat-header .back{display:flex;align-items:center;justify-content:center;width:28px;height:28px;color:#fff;text-decoration:none;flex:0 0 auto;opacity:.9}
+  .chat-header .back svg{width:20px;height:20px}
+  .chat-header .avatar{width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
+  .chat-header .avatar img{width:100%;height:100%;object-fit:contain;padding:4px}
+  .chat-header .who{min-width:0;flex:1}
+  .chat-header .who .name{font-size:15.5px;font-weight:600;line-height:1.25}
+  .chat-header .who .status{font-size:12px;opacity:.82;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chat-header .restart{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;padding:6px 10px;border-radius:999px;cursor:pointer;flex:0 0 auto;font-family:inherit}
+  .chat-header .restart:hover{background:rgba(255,255,255,.22)}
+  .proto-badge{background:var(--brand);color:#fff;text-align:center;font-size:11.5px;padding:5px 10px;letter-spacing:.02em;flex:0 0 auto}
+
+  .chat-body{flex:1;overflow-y:auto;padding:16px 4%;display:flex;flex-direction:column;gap:2px}
+  .row{display:flex;margin:3px 0;max-width:100%}
+  .row.bot{justify-content:flex-start}
+  .row.user{justify-content:flex-end}
+  .bubble{max-width:min(78%,560px);padding:8px 11px;border-radius:9px;font-size:14.3px;line-height:1.45;box-shadow:var(--shadow);position:relative;white-space:normal}
+  .row.bot .bubble{background:var(--wa-bubble-bot);border-top-left-radius:2px}
+  .row.user .bubble{background:var(--wa-bubble-user);border-top-right-radius:2px}
+  .bubble p{margin:0 0 6px}
+  .bubble p:last-child{margin-bottom:0}
+  .bubble ul{margin:4px 0 6px;padding-left:20px}
+  .bubble ul:last-child{margin-bottom:0}
+  .bubble li{margin-bottom:3px}
+  .bubble h2{font-size:14.3px;margin:0 0 6px;font-weight:700;color:var(--brand-dark)}
+  .bubble strong{color:var(--brand-dark)}
+  .bubble .time{display:block;text-align:right;font-size:10.5px;color:var(--ink-soft);margin-top:2px;opacity:.85}
+  .bubble.wa-link{background:var(--wa-bubble-bot)}
+  .bubble.wa-link a{display:inline-flex;align-items:center;gap:6px;background:var(--wa-green);color:#fff;font-weight:600;font-size:13.5px;padding:8px 14px;border-radius:999px;text-decoration:none;margin-top:2px}
+  .bubble.wa-link a:hover{background:var(--wa-green-dark)}
+  .bubble.wa-link svg.wa-icon{width:15px;height:15px}
+  .bubble .see-more{display:inline-block;margin-top:4px;font-size:13px;color:#0a6cad;text-decoration:underline;cursor:pointer}
+  .typing{display:inline-flex;align-items:center;gap:3px;padding:2px 2px}
+  .typing span{width:6px;height:6px;border-radius:50%;background:#9aa39d;display:inline-block;animation:blink 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}
+  .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+  .composer{flex:0 0 auto;background:#f0f0f0;padding:8px 10px;display:flex;align-items:center;gap:8px;border-top:1px solid #ddd}
+  .composer input{flex:1;min-width:0;border:none;outline:none;border-radius:22px;padding:11px 16px;font-size:14.5px;background:#fff;font-family:inherit;color:var(--ink)}
+  .composer input::placeholder{color:#8a8a8a}
+  .composer .send{width:42px;height:42px;min-width:42px;border-radius:50%;background:var(--wa-header);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff}
+  .composer .send:hover{background:var(--wa-header-dark)}
+  .composer .send svg{width:19px;height:19px}
+
+  @media (max-width:560px){
+    .chat-body{padding:14px 3%}
+    .bubble{max-width:88%}
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-badge">PROTÓTIPO DE TESTE — simula o bot de WhatsApp, mas não é o número oficial da Cardios</div>
+<div class="chat-header">
+  <a class="back" href="index.html" title="Voltar para a Central de Ajuda" aria-label="Voltar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+  </a>
+  <div class="avatar"><img src="assets/logo-cardios.png" alt=""></div>
+  <div class="who">
+    <div class="name">Suporte Cardios</div>
+    <div class="status" id="status-line">assistente virtual · baseado no FAQ</div>
+  </div>
+  <button type="button" class="restart" onclick="restartChat()">Reiniciar</button>
+</div>
+
+<div class="chat-body" id="chat-body"></div>
+
+<div class="composer">
+  <input id="msg-input" type="text" placeholder="Digite sua mensagem" autocomplete="off">
+  <button type="button" class="send" aria-label="Enviar" onclick="handleSend()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+  </button>
+</div>
+
+<script id="faq-data" type="application/json">__DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('faq-data').textContent);
+const WA_NUMBER = "551138833000";
+const ICON_WHATSAPP = `<svg class="wa-icon" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.42-4.4-1.16l-.32-.19-3.01.79.8-2.93-.2-.32A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>`;
+
+/* ---------- markdown mínimo (mesmo suporte do site: ## / - / parágrafo) ---------- */
+function inline(t){
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+}
+function mdToHtml(md){
+  const lines = (md || '').split('\n');
+  let html = '', inList = false;
+  for (let line of lines){
+    line = line.trim();
+    if (!line){ if (inList){ html += '</ul>'; inList=false; } continue; }
+    if (line.startsWith('## ')){
+      if (inList){ html += '</ul>'; inList=false; }
+      html += `<h2>${inline(line.slice(3))}</h2>`;
+    } else if (line.startsWith('- ')){
+      if (!inList){ html += '<ul>'; inList=true; }
+      html += `<li>${inline(line.slice(2))}</li>`;
+    } else {
+      if (inList){ html += '</ul>'; inList=false; }
+      html += `<p>${inline(line)}</p>`;
+    }
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+/* ---------- indexação e busca por texto livre ---------- */
+const STOPWORDS = new Set(['a','ao','aos','as','os','um','uma','uns','umas','de','do','da','dos','das','em','no','na','nos','nas','por','para','pra','pro','com','sem','sob','sobre','e','ou','que','se','ja','so','sao','ser','esta','estao','estou','tem','tenho','meu','minha','meus','minhas','seu','sua','seus','suas','esse','essa','esses','essas','este','esta','estes','estas','isso','isto','aquele','aquela','como','onde','quando','porque','nao','qual','quais','quero','gostaria','poderia','pode','podem','fazer','favor','obrigado','obrigada','ola','oi','bom','boa','dia','tarde','noite','preciso','ajuda','ajudar','sobre','depois','antes','the','and','of','to','is']);
+
+function normalize(s){
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+function tokenize(s){
+  return normalize(s).split(/[^a-z0-9]+/).filter(t => t.length > 2 && !STOPWORDS.has(t));
+}
+function extractSection(body, headingPrefixNorm){
+  const lines = (body || '').split('\n');
+  let capture = false, out = [];
+  for (const raw of lines){
+    if (/^##\s+/.test(raw.trim())){
+      const headingNorm = normalize(raw.trim().replace(/^##\s+/,''));
+      if (headingNorm.startsWith(headingPrefixNorm)){ capture = true; continue; }
+      if (capture) break;
+    }
+    if (capture) out.push(raw);
+  }
+  return out.join('\n').trim();
+}
+
+const ARTICLES = [];
+DATA.forEach(c => {
+  c.artigos.forEach((a, i) => {
+    const respostaRapida = extractSection(a.body, normalize('Resposta rápida')) || a.body;
+    ARTICLES.push({
+      cat: c.categoria,
+      idx: i,
+      a,
+      tituloTokens: tokenize(a.titulo),
+      produtosTokens: tokenize(Array.isArray(a.produtos) ? a.produtos.join(' ') : (a.produtos || '')),
+      catTokens: tokenize(c.categoria),
+      bodyTokens: tokenize(a.body),
+      tituloNorm: normalize(a.titulo),
+      bodyNorm: normalize(a.body),
+      respostaRapida
+    });
+  });
+});
+const ACTIVE_CATEGORY_NAMES = DATA.filter(c => c.artigos.length > 0).map(c => c.categoria);
+
+function bestMatch(query){
+  const qNorm = normalize(query);
+  const qTokens = [...new Set(tokenize(query))];
+  if (qTokens.length === 0) return null;
+  let best = null, bestScore = -1, bestStrongHits = 0;
+  ARTICLES.forEach(art => {
+    // "strongHits" conta quantas PALAVRAS DIFERENTES da pergunta bateram em
+    // título/produtos/categoria (sinal específico do artigo). Corpo sozinho
+    // não conta pra isso — quase todo artigo compartilha palavras genéricas
+    // no meio do texto (ex: "exame" aparece até em título de um artigo que
+    // não tem nada a ver com a pergunta), então um único acerto de corpo, ou
+    // até um único acerto isolado de título/categoria numa pergunta com
+    // várias palavras, não deveria bastar para decidir a resposta.
+    let score = 0, strongHits = 0;
+    qTokens.forEach(t => {
+      let hitStrong = false;
+      if (art.tituloTokens.includes(t)){ score += 4; hitStrong = true; }
+      if (art.produtosTokens.includes(t)){ score += 4; hitStrong = true; }
+      if (art.catTokens.includes(t)){ score += 2; hitStrong = true; }
+      if (art.bodyTokens.includes(t)) score += 1;
+      if (hitStrong) strongHits += 1;
+    });
+    if (qNorm.length > 4 && art.tituloNorm.includes(qNorm)){ score += 10; strongHits += 1; }
+    if (score > bestScore){ bestScore = score; best = art; bestStrongHits = strongHits; }
+  });
+  // pergunta curta (1-2 palavras com sentido, ex: "cardiosmart" ou "erro bluetooth"):
+  // 1 acerto forte já basta. Pergunta mais longa: exige pelo menos 2 palavras
+  // diferentes batendo em título/produto/categoria, pra não "adivinhar" com
+  // uma coincidência isolada.
+  const accepted = bestStrongHits >= 2 || (bestStrongHits >= 1 && qTokens.length <= 2);
+  return accepted ? best : null;
+}
+
+/* ---------- UI de chat ---------- */
+const chatBody = document.getElementById('chat-body');
+const input = document.getElementById('msg-input');
+const statusLine = document.getElementById('status-line');
+
+function scrollToBottom(){ chatBody.scrollTop = chatBody.scrollHeight; }
+function nowLabel(){
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+function addBubble(side, innerHtml, extraClass){
+  const row = document.createElement('div');
+  row.className = 'row ' + side;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble' + (extraClass ? ' ' + extraClass : '');
+  bubble.innerHTML = innerHtml + `<span class="time">${nowLabel()}</span>`;
+  row.appendChild(bubble);
+  chatBody.appendChild(row);
+  scrollToBottom();
+  return bubble;
+}
+function addUserMessage(text){
+  const div = document.createElement('div');
+  div.textContent = text;
+  addBubble('user', `<p>${div.innerHTML}</p>`);
+}
+function showTyping(){
+  const row = document.createElement('div');
+  row.className = 'row bot';
+  row.id = 'typing-row';
+  row.innerHTML = `<div class="bubble"><span class="typing"><span></span><span></span><span></span></span></div>`;
+  chatBody.appendChild(row);
+  scrollToBottom();
+}
+function hideTyping(){
+  const row = document.getElementById('typing-row');
+  if (row) row.remove();
+}
+function botSay(html, extraClass, delay){
+  return new Promise(resolve => {
+    showTyping();
+    setTimeout(() => {
+      hideTyping();
+      addBubble('bot', html, extraClass);
+      resolve();
+    }, delay || 650);
+  });
+}
+
+function waHandoffHtml(){
+  return `<p>Ainda tem dúvida?</p><a href="https://wa.me/${WA_NUMBER}" target="_blank" rel="noopener">${ICON_WHATSAPP} Converse com nosso Suporte via WhatsApp</a>`;
+}
+
+async function respondTo(query){
+  const match = bestMatch(query);
+  if (!match){
+    statusLine.textContent = 'assistente virtual · baseado no FAQ';
+    await botSay(`<p>Não encontrei uma resposta pronta pra isso ainda 🙁</p><p>Você pode tentar reformular (ex: nome do aparelho, ou a mensagem de erro exata), ou falar direto com o Suporte:</p>`);
+    await botSay(waHandoffHtml(), 'wa-link', 450);
+    return;
+  }
+  const { a, cat, idx, respostaRapida } = match;
+  const produtos = Array.isArray(a.produtos) ? a.produtos.join(', ') : (a.produtos || '');
+  const lead = `<p>Encontrei isso em <strong>${cat}</strong>${produtos ? ' — ' + produtos : ''}:</p>`;
+  const body = mdToHtml(respostaRapida);
+  const link = `<span class="see-more" onclick="window.open('index.html?cat=${encodeURIComponent(cat)}&i=${idx}','_blank')">Ver artigo completo →</span>`;
+  await botSay(lead + body + link);
+  await botSay(waHandoffHtml(), 'wa-link', 500);
+}
+
+async function handleSend(){
+  const text = input.value.trim();
+  if (!text) return;
+  addUserMessage(text);
+  input.value = '';
+  await respondTo(text);
+}
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
+
+async function greet(){
+  chatBody.innerHTML = '';
+  await botSay(`<p>Olá! 👋 Sou o assistente virtual de Suporte da Cardios.</p><p>Me conta sua dúvida (equipamento, mensagem de erro, etc.) que eu tento te ajudar. Categorias disponíveis nesta versão de teste: ${ACTIVE_CATEGORY_NAMES.join(', ')}.</p>`, null, 500);
+  await botSay(`<p>Por exemplo, você pode perguntar algo como <em>"meu holter não liga"</em> ou <em>"erro de bluetooth no MAPA"</em>.</p>`, null, 500);
+}
+function restartChat(){ greet(); input.value=''; input.focus(); }
+
+greet();
+input.focus();
+</script>
+</body>
+</html>
