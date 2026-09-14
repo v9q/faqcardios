@@ -42,14 +42,10 @@ Abra `site/index.html` em qualquer navegador (ou publique via GitHub Pages) para
 
 ### Publicar online
 
-O site está pronto para publicação no GitHub Pages. O workflow em
-`.github/workflows/pages.yml` publica automaticamente o conteúdo de `site/`
-quando há um push na branch `main`. Também é possível iniciá-lo manualmente
-em **Actions → Deploy FAQ site → Run workflow**.
-
-Depois da primeira execução, habilite **Settings → Pages → Build and
-deployment → Source: GitHub Actions**. A URL será
-`https://<organização-ou-usuário>.github.io/<repositório>/`.
+O workflow em `.github/workflows/pages.yml` publica automaticamente o
+conteúdo de `site/` no GitHub Pages quando há um push na branch `main`.
+Também é possível iniciá-lo manualmente em **Actions → Deploy FAQ site →
+Run workflow**.
 
 ## O que falta antes de publicar de verdade
 
