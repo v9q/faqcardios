@@ -55,12 +55,21 @@
   .chat-bubble.mini .send-btn{width:28px;height:28px;min-width:28px}
   .chat-bubble.mini .send-btn svg{width:13px;height:13px}
 
+  /* a margem negativa é só para o card "flutuar" sobre o hero, na home —
+     nas páginas internas (sem hero) ela empurrava o card para cima da
+     própria barra de navegação, sobrepondo/cortando a borda inferior da
+     nav. .inner (aplicada via JS quando o hero está escondido) restaura um
+     espaçamento normal. */
   main{max-width:1040px;margin:-40px auto 0;padding:0 16px}
+  main.inner{margin-top:24px}
   .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--border)}
   section.view{margin-top:0;padding:28px}
 
   /* category cards */
-  .categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:0;list-style:none;margin:0}
+  /* 3 colunas nesta versão focada em Suporte (era 4) — largura mínima do
+     card ajustada para não caber uma 4ª coluna em telas desktop, mas ainda
+     encolhe para 2/1 coluna em telas menores */
+  .categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:0;list-style:none;margin:0}
   .cat-card{padding:26px 18px 22px;cursor:pointer;text-align:center;border:1px solid transparent;border-radius:12px;transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease}
   .cat-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(30,15,10,.10);border-color:var(--border)}
   .cat-icon-circle{width:56px;height:56px;border-radius:50%;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--brand-dark)}
@@ -144,7 +153,7 @@
   </div>
 </header>
 
-<main>
+<main id="main">
   <div id="app" class="card"></div>
 </main>
 
@@ -253,7 +262,8 @@ function topIdxInCategory(data){
 
 const app = document.getElementById('app');
 const hero = document.getElementById('hero');
-function showHero(show){ hero.style.display = show ? '' : 'none'; }
+const mainEl = document.getElementById('main');
+function showHero(show){ hero.style.display = show ? '' : 'none'; mainEl.classList.toggle('inner', !show); }
 
 function runSearch(value){
   const q = (value || '').trim();
