@@ -51,7 +51,15 @@
   .home-chat .row{display:flex;margin:3px 0}
   .home-chat .row.bot{justify-content:flex-start}
   .home-chat .row.user{justify-content:flex-end}
-  .home-chat .bubble{max-width:84%;padding:8px 11px;border-radius:9px;font-size:13.3px;line-height:1.45;box-shadow:var(--shadow)}
+  /* BUG CRÍTICO reportado pelo Paulo: o texto das mensagens ficava ilegível
+     (branco sobre fundo branco/claro do balão) porque .home-chat vive dentro
+     do hero, que define color:#fff pra tudo dentro dele — e nada aqui
+     sobrescrevia isso pro texto normal do balão (só o <strong> tinha cor
+     própria). Um emoji dentro do texto continua sempre visível (a cor do CSS
+     não afeta emoji), por isso só o emoji aparecia e o resto do parágrafo
+     "sumia". Corrigido usando o mesmo cinza já usado na descrição dos
+     tópicos (.desc, var(--ink-soft)), como sugerido. */
+  .home-chat .bubble{max-width:84%;padding:8px 11px;border-radius:9px;font-size:13.3px;line-height:1.45;box-shadow:var(--shadow);color:var(--ink-soft)}
   .home-chat .row.bot .bubble{background:#fff;border:1px solid var(--border);border-top-left-radius:2px}
   .home-chat .row.user .bubble{background:var(--brand-soft);border-top-right-radius:2px}
   .home-chat .bubble p{margin:0 0 6px}
@@ -98,6 +106,12 @@
   main.inner{margin-top:24px}
   .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);border:1px solid var(--border)}
   section.view{margin-top:0;padding:28px}
+
+  /* botão que revela a grade de categorias — home só mostra o chat de início */
+  .topics-cta{padding:40px 20px;text-align:center}
+  .topics-btn{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--brand);color:var(--brand-dark);font-weight:700;font-size:14.5px;padding:12px 22px;border-radius:999px;cursor:pointer;font-family:inherit;transition:background .12s ease}
+  .topics-btn:hover{background:var(--brand-soft)}
+  .topics-btn svg{width:15px;height:15px}
 
   /* category cards */
   /* 3 colunas nesta versão focada em Suporte (era 4) — largura mínima do
@@ -394,17 +408,31 @@ function addHomeUserMessage(text){
   div.textContent = text;
   addHomeBubble('user', `<p>${div.innerHTML}</p>`);
 }
+// BUG CRÍTICO reproduzido pelo Paulo (conversa aparecendo "toda quebrada": balões
+// vazios, prompt de WhatsApp duplicado, mensagens fora de ordem): showHomeTyping/
+// hideHomeTyping usavam um id fixo ('home-typing-row') pra achar o indicador de
+// "digitando..." — funciona SE só existe uma troca de mensagem por vez. Mas nada
+// impedia duas trocas rodarem ao mesmo tempo (ex: a saudação inicial ainda
+// "digitando" quando a pessoa já manda uma pergunta, bem comum já que agora o
+// chat é a primeira coisa na tela): as duas criavam uma linha com o MESMO id, e
+// hideHomeTyping() só removia a primeira que encontrava — a outra ficava presa
+// na tela (parecendo um balão vazio) e os balões de resposta podiam entrar fora
+// de ordem. Corrigido de duas formas complementares: (1) guardamos a referência
+// do elemento em vez de buscar por id, então cada chamada só mexe na SUA própria
+// linha; (2) enqueueHomeChatTurn() (mais abaixo) serializa a saudação e cada
+// pergunta numa fila, garantindo que só exista uma troca "digitando → resposta"
+// por vez.
+let homeTypingRow = null;
 function showHomeTyping(){
   const row = document.createElement('div');
   row.className = 'row bot';
-  row.id = 'home-typing-row';
   row.innerHTML = `<div class="bubble"><span class="typing"><span></span><span></span><span></span></span></div>`;
   homeChatBody.appendChild(row);
+  homeTypingRow = row;
   homeChatScrollBottom();
 }
 function hideHomeTyping(){
-  const row = document.getElementById('home-typing-row');
-  if (row) row.remove();
+  if (homeTypingRow) { homeTypingRow.remove(); homeTypingRow = null; }
 }
 function homeBotSay(html, extraClass, delay){
   return new Promise(resolve => {
@@ -434,20 +462,30 @@ async function respondToHomeChat(query){
   await homeBotSay(lead + body + link);
   await homeBotSay(homeWaHandoffHtml(), 'wa-link', 500);
 }
+// Fila que serializa a saudação inicial e cada pergunta do usuário — mesmo se a
+// pessoa mandar a próxima pergunta antes da resposta anterior terminar de
+// aparecer, cada troca só começa depois que a anterior (saudação incluída)
+// já terminou. Ver nota acima em showHomeTyping/hideHomeTyping.
+let homeChatQueue = Promise.resolve();
+function enqueueHomeChatTurn(task){
+  const run = () => Promise.resolve().then(task).catch(err => console.error('home chat: falha numa troca', err));
+  homeChatQueue = homeChatQueue.then(run);
+  return homeChatQueue;
+}
 async function handleHomeChatSend(){
   const text = homeChatInput.value.trim();
   if (!text) return;
   addHomeUserMessage(text);
   homeChatInput.value = '';
   homeChatInput.focus();
-  await respondToHomeChat(text);
+  await enqueueHomeChatTurn(() => respondToHomeChat(text));
   homeChatInput.focus();
 }
 homeChatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleHomeChatSend(); });
 // Mensagem de boas-vindas já aparece assim que a página carrega — mesmo se a
 // pessoa começar navegando pelas categorias, ao voltar pra home a conversa já
 // está esperando, como se alguém já estivesse ali pronto pra ajudar.
-homeBotSay(`<p>Olá! 👋 Sou o assistente virtual de Suporte da Cardios. Me conta sua dúvida (equipamento, mensagem de erro etc.) que eu tento te ajudar — por exemplo, <em>"meu holter não liga"</em> ou <em>"erro de bluetooth no MAPA"</em>.</p>`, null, 400);
+enqueueHomeChatTurn(() => homeBotSay(`<p>Olá! 👋 Sou o assistente virtual de Suporte da Cardios. Me conta sua dúvida (equipamento, mensagem de erro etc.) que eu tento te ajudar — por exemplo, <em>"meu holter não liga"</em> ou <em>"erro de bluetooth no MAPA"</em>.</p>`, null, 400));
 
 const app = document.getElementById('app');
 const hero = document.getElementById('hero');
@@ -496,7 +534,20 @@ function bindMiniSearch(){
   el.addEventListener('input', (e) => runSearch(e.target.value));
 }
 
+// A primeira tela mostra só o chat (no hero) + este botão — os tópicos/
+// categorias só aparecem depois de clicar, em vez de já virem abertos. Pedido
+// do Paulo: "nesta primeira tela somente colocarmos a tela de chat e não os
+// tópicos que aparecem abaixo".
 function renderHome() {
+  showHero(true);
+  app.innerHTML = `<section class="view topics-cta">
+    <button type="button" class="topics-btn" onclick="renderTopicsGrid()">
+      Navegue pelos nossos tópicos ${ICON_ARROW}
+    </button>
+  </section>`;
+}
+
+function renderTopicsGrid() {
   showHero(true);
   const cards = DATA.map(c => {
     const n = c.artigos.length;

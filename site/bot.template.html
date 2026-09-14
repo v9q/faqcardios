@@ -232,17 +232,23 @@ function addUserMessage(text){
   div.textContent = text;
   addBubble('user', `<p>${div.innerHTML}</p>`);
 }
+// Mesmo bug de concorrência encontrado (e corrigido) no chat da home
+// (site/index.template.html): showTyping/hideTyping usavam um id fixo
+// ('typing-row') pra achar a linha de "digitando...", o que só funciona se
+// nunca houver duas trocas rodando ao mesmo tempo. Corrigido guardando a
+// referência do elemento (em vez de buscar por id) e serializando as trocas
+// numa fila (enqueueChatTurn, mais abaixo).
+let typingRowEl = null;
 function showTyping(){
   const row = document.createElement('div');
   row.className = 'row bot';
-  row.id = 'typing-row';
   row.innerHTML = `<div class="bubble"><span class="typing"><span></span><span></span><span></span></span></div>`;
   chatBody.appendChild(row);
+  typingRowEl = row;
   scrollToBottom();
 }
 function hideTyping(){
-  const row = document.getElementById('typing-row');
-  if (row) row.remove();
+  if (typingRowEl) { typingRowEl.remove(); typingRowEl = null; }
 }
 function botSay(html, extraClass, delay){
   return new Promise(resolve => {
@@ -282,22 +288,33 @@ async function respondTo(query){
 // conseguia mais digitar a próxima pergunta, sem nenhum erro visível.
 // Reaparece toda vez que o botão rouba o foco, então devolvemos o foco pro
 // campo no final de handleSend, não importa se foi Enter ou clique.
+// Fila que serializa a saudação e cada pergunta — sem ela, mandar uma pergunta
+// enquanto a saudação (ou a resposta anterior) ainda está "digitando" faz duas
+// trocas rodarem ao mesmo tempo e bagunça a ordem dos balões.
+let chatQueue = Promise.resolve();
+function enqueueChatTurn(task){
+  const run = () => Promise.resolve().then(task).catch(err => console.error('chat: falha numa troca', err));
+  chatQueue = chatQueue.then(run);
+  return chatQueue;
+}
 async function handleSend(){
   const text = input.value.trim();
   if (!text) return;
   addUserMessage(text);
   input.value = '';
   input.focus();
-  await respondTo(text);
+  await enqueueChatTurn(() => respondTo(text));
   input.focus();
 }
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
 
-async function greet(){
+async function greetTurn(){
   chatBody.innerHTML = '';
+  typingRowEl = null;
   await botSay(`<p>Olá! 👋 Sou o assistente virtual de Suporte da Cardios.</p><p>Me conta sua dúvida (equipamento, mensagem de erro, etc.) que eu tento te ajudar. Categorias disponíveis nesta versão de teste: ${ACTIVE_CATEGORY_NAMES.join(', ')}.</p>`, null, 500);
   await botSay(`<p>Por exemplo, você pode perguntar algo como <em>"meu holter não liga"</em> ou <em>"erro de bluetooth no MAPA"</em>.</p>`, null, 500);
 }
+function greet(){ return enqueueChatTurn(greetTurn); }
 function restartChat(){ greet(); input.value=''; input.focus(); }
 
 greet();
