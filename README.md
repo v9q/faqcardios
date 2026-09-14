@@ -40,6 +40,17 @@ Cada artigo em `faq/` segue o mesmo formato: frontmatter (categoria, produtos, v
 
 Abra `site/index.html` em qualquer navegador (ou publique via GitHub Pages) para navegar pela Central de Ajuda com busca e categorias, no mesmo espírito da referência indicada (Jusbrasil).
 
+### Publicar online
+
+O site está pronto para publicação no GitHub Pages. O workflow em
+`.github/workflows/pages.yml` publica automaticamente o conteúdo de `site/`
+quando há um push na branch `main`. Também é possível iniciá-lo manualmente
+em **Actions → Deploy FAQ site → Run workflow**.
+
+Depois da primeira execução, habilite **Settings → Pages → Build and
+deployment → Source: GitHub Actions**. A URL será
+`https://<organização-ou-usuário>.github.io/<repositório>/`.
+
 ## O que falta antes de publicar de verdade
 
 - [ ] Validar com o Filipe os 4 artigos de CardioNet (marcados ⚠️ — hoje baseados em fichas comerciais, não em um guia de troubleshooting).
