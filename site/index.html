@@ -118,8 +118,13 @@
      card ajustada para não caber uma 4ª coluna em telas desktop, mas ainda
      encolhe para 2/1 coluna em telas menores */
   .categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:0;list-style:none;margin:0}
-  .cat-card{padding:26px 18px 22px;cursor:pointer;text-align:center;border:1px solid transparent;border-radius:12px;transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease}
-  .cat-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(30,15,10,.10);border-color:var(--border)}
+  /* Cada card tem seu próprio fundo branco + sombra: antes eles dependiam do
+     #app.card (a "folha" branca grande) por trás pra aparecer sobre fundo
+     branco; desde que a grade de tópicos deixou de ficar dentro dessa folha
+     (ver renderTopicsGrid — mesmo ajuste feito na tela de só-o-botão), cada
+     card precisa se destacar sozinho do fundo cinza claro da página. */
+  .cat-card{background:var(--card);padding:26px 18px 22px;cursor:pointer;text-align:center;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease}
+  .cat-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(30,15,10,.10);border-color:var(--brand)}
   .cat-icon-circle{width:56px;height:56px;border-radius:50%;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--brand-dark)}
   .cat-icon-circle svg{width:27px;height:27px}
   .cat-card.skeleton .cat-icon-circle{background:#f1eeec;color:var(--ink-soft)}
@@ -558,10 +563,18 @@ function renderHome() {
   </section>`;
 }
 
+// Paulo apontou que a mesma "forma branca" flutuando sobre o hero também
+// aparecia na grade de tópicos, não só na tela de só-o-botão — então a grade
+// recebe o mesmo tratamento "sem cartão" que renderHome() já usava: tira a
+// classe 'card' do #app (sem fundo/sombra/borda própria envolvendo tudo) e
+// usa a margem positiva normal (.inner) em vez do puxão negativo que fazia
+// esse conteúdo flutuar por cima do hero. Cada card de categoria (.cat-card,
+// ver CSS) agora tem seu próprio fundo/sombra, então continuam se destacando
+// como cartões individuais mesmo sem essa "folha" grande por trás.
 function renderTopicsGrid() {
   showHero(true);
-  app.classList.add('card');
-  mainEl.classList.remove('inner');
+  app.classList.remove('card');
+  mainEl.classList.add('inner');
   const cards = DATA.map(c => {
     const n = c.artigos.length;
     const skeleton = n === 0;
