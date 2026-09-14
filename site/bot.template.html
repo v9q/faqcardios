@@ -276,12 +276,20 @@ async function respondTo(query){
   await botSay(waHandoffHtml(), 'wa-link', 500);
 }
 
+// BUG CRÍTICO reportado pelo Paulo ("o bot não está funcionando"): ao clicar
+// no botão de enviar (em vez de apertar Enter), o foco saía do campo de
+// texto e nunca voltava — quem clicava no botão (bem comum) simplesmente não
+// conseguia mais digitar a próxima pergunta, sem nenhum erro visível.
+// Reaparece toda vez que o botão rouba o foco, então devolvemos o foco pro
+// campo no final de handleSend, não importa se foi Enter ou clique.
 async function handleSend(){
   const text = input.value.trim();
   if (!text) return;
   addUserMessage(text);
   input.value = '';
+  input.focus();
   await respondTo(text);
+  input.focus();
 }
 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSend(); });
 
