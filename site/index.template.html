@@ -538,8 +538,19 @@ function bindMiniSearch(){
 // categorias só aparecem depois de clicar, em vez de já virem abertos. Pedido
 // do Paulo: "nesta primeira tela somente colocarmos a tela de chat e não os
 // tópicos que aparecem abaixo".
+// Erro de diagramação apontado pelo Paulo: com só o botão dentro, o cartão
+// branco arredondado + sombra (.card) que normalmente "flutua" sobre o hero
+// (pensado pra abrigar a grade inteira de categorias) sobrava como uma forma
+// solta, sem necessidade, em volta de um botão só. Aqui a tela de só-o-botão
+// abre mão do visual de cartão (tira a classe 'card' do #app, então some o
+// fundo branco/borda/sombra/cantos arredondados) e do puxão pra cima que
+// existe pra fazer o cartão flutuar sobre o hero (reaproveita a classe
+// 'inner', a mesma usada nas páginas sem hero) — o botão passa a ficar
+// direto na área branca comum da página, sem nenhuma forma ao redor.
 function renderHome() {
   showHero(true);
+  app.classList.remove('card');
+  mainEl.classList.add('inner');
   app.innerHTML = `<section class="view topics-cta">
     <button type="button" class="topics-btn" onclick="renderTopicsGrid()">
       Navegue pelos nossos tópicos ${ICON_ARROW}
@@ -549,6 +560,8 @@ function renderHome() {
 
 function renderTopicsGrid() {
   showHero(true);
+  app.classList.add('card');
+  mainEl.classList.remove('inner');
   const cards = DATA.map(c => {
     const n = c.artigos.length;
     const skeleton = n === 0;
@@ -577,6 +590,7 @@ function renderTopicsGrid() {
 
 function renderCategory(catEncoded) {
   showHero(false);
+  app.classList.add('card');
   const cat = decodeURIComponent(catEncoded);
   const data = DATA.find(c => c.categoria === cat);
   if (!data) return renderHome();
@@ -611,6 +625,7 @@ function renderCategory(catEncoded) {
 
 function renderArticle(catEncoded, idx) {
   showHero(false);
+  app.classList.add('card');
   const cat = decodeURIComponent(catEncoded);
   const data = DATA.find(c => c.categoria === cat);
   const a = data.artigos[idx];
@@ -634,6 +649,7 @@ function renderArticle(catEncoded, idx) {
 
 function renderSearchResults(query) {
   showHero(false);
+  app.classList.add('card');
   const q = query.trim().toLowerCase();
   const results = [];
   DATA.forEach(c => c.artigos.forEach((a, i) => {
