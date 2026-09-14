@@ -287,10 +287,33 @@ const hero = document.getElementById('hero');
 const mainEl = document.getElementById('main');
 function showHero(show){ hero.style.display = show ? '' : 'none'; mainEl.classList.toggle('inner', !show); }
 
+// BUG CRÍTICO já visto em produção: renderSearchResults() (chamado a cada
+// letra digitada) substitui app.innerHTML inteiro — o que destrói e recria o
+// próprio campo de busca (#search-mini) a cada tecla. O campo novo nunca
+// nasce com foco, então o usuário só conseguia digitar 1 letra por vez e
+// precisava clicar de novo pra cada caractere seguinte. Corrigido guardando
+// se um campo de busca estava focado antes do re-render e devolvendo o foco
+// (com o cursor no final do texto) pro campo recriado depois.
 function runSearch(value){
-  const q = (value || '').trim();
+  const raw = value || '';
+  const q = raw.trim();
+  const activeEl = document.activeElement;
+  const wasSearchFocused = !!activeEl && (activeEl.id === 'search-home' || activeEl.id === 'search-mini');
   if (!q) { showHero(true); renderHome(); return; }
-  renderSearchResults(q);
+  // Passa o texto CRU (raw), não o já-cortado (q), pro campo recriado
+  // reaparecer com exatamente o que o usuário digitou — inclusive um espaço
+  // no fim, que senão desaparecia a cada tecla (ex: "holter" virava
+  // "holternao" ao digitar "holter não", porque o espaço nunca voltava pro
+  // valor do campo recriado).
+  renderSearchResults(raw);
+  if (wasSearchFocused) {
+    const el = document.getElementById('search-mini');
+    if (el) {
+      el.focus();
+      const len = el.value.length;
+      try { el.setSelectionRange(len, len); } catch (e) {}
+    }
+  }
 }
 function miniSearchHtml(prefill){
   return `<div class="mini-search">
